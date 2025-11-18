@@ -1,147 +1,161 @@
 -- RedWizard Hub - Champions: Summon Your Team
--- Fixed & Guaranteed to show GUI + console message (Delta Executor tested)
+-- Using sirius.menu/rayfield (perfect for Delta Executor)
 
-print("RedWizard Hub - Loading Rayfield UI...")
+print("RedWizard Hub - Loading Rayfield from sirius.menu...")
 
-local success, err = pcall(function()
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/weakhoes/Roblox-UI-Libs/refs/heads/main/Rayfield%20Lib/Rayfield%20Lib%20Source.lua"))()
-end)
-
-if not success then
-    warn("Failed to load Rayfield UI! Error: "..tostring(err))
-    return
-end
-
-wait(1) -- small delay so Rayfield fully loads
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
-    Name = "RedWizard Hub",
-    LoadingTitle = "RedWizard Hub",
-    LoadingSubtitle = "Champions: Summon Your Team",
-    ConfigurationSaving = { Enabled = true, FolderName = "RedWizardConfig" },
-    KeySystem = false
+   Name = "RedWizard Hub",
+   LoadingTitle = "RedWizard Hub",
+   LoadingSubtitle = "Champions: Summon Your Team",
+   ConfigurationSaving = {
+      Enabled = true,
+      FolderName = "RedWizardConfig"
+   },
+   Discord = {Enabled = false},
+   KeySystem = false
 })
 
 Rayfield:Notify({
-    Title = "RedWizard Hub",
-    Content = "Successfully loaded! Enjoy safely.",
-    Duration = 8
+   Title = "RedWizard Hub",
+   Content = "Loaded successfully! Enjoy the safe features.",
+   Duration = 6.5,
+   Image = 4483362458,
 })
 
-print("RedWizard Hub - GUI Loaded Successfully!")
+print("RedWizard Hub - GUI Loaded!")
 
 -- Tabs
-local PlayerTab = Window:CreateTab("Player")
-local VisualTab = Window:CreateTab("Visuals")
-local TeleportTab = Window:CreateTab("Teleports")
-local MiscTab = Window:CreateTab("Misc")
+local PlayerTab = Window:CreateTab("Player", 4483362458)
+local VisualTab = Window:CreateTab("Visuals", 4483362458)
+local TeleTab = Window:CreateTab("Teleports", 4483362458)
+local MiscTab = Window:CreateTab("Misc", 4483362458)
 
--- WalkSpeed
+-- WalkSpeed Slider + Input
 PlayerTab:CreateSlider({
-    Name = "WalkSpeed",
-    Range = {16, 300},
-    Increment = 1,
-    CurrentValue = 16,
-    Callback = function(v)
-        if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
-            game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = v
-        end
-    end
+   Name = "WalkSpeed",
+   Range = {16, 300},
+   Increment = 5,
+   CurrentValue = 16,
+   Callback = function(v)
+      game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = v
+   end
 })
 
--- Fly (Hold Space)
+PlayerTab:CreateInput({
+   Name = "Set WalkSpeed (Text)",
+   PlaceholderText = "Enter speed...",
+   Callback = function(t)
+      local n = tonumber(t)
+      if n then game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = n end
+   end
+})
+
+-- Fly (Hold Space / Jump)
 local Flying = false
 PlayerTab:CreateToggle({
-    Name = "Fly (Hold Space/Jump)",
-    CurrentValue = false,
-    Callback = function(state)
-        Flying = state
-        local plr = game.Players.LocalPlayer
-        local char = plr.Character or plr.CharacterAdded:Wait()
-        local root = char:WaitForChild("HumanoidRootPart")
-        local hum = char:WaitForChild("Humanoid")
+   Name = "Fly (Hold Space)",
+   CurrentValue = false,
+   Callback = function(state)
+      Flying = state
+      local plr = game.Players.LocalPlayer
+      local char = plr.Character or plr.CharacterAdded:Wait()
+      local root = char:WaitForChild("HumanoidRootPart")
+      local hum = char:WaitForChild("Humanoid")
 
-        if state then
-            local bv = Instance.new("BodyVelocity", root)
-            bv.MaxForce = Vector3.new(1e5,1e5,1e5)
-            local bg = Instance.new("BodyGyro", root)
-            bg.MaxTorque = Vector3.new(1e5,1e5,1e5)
-            bg.P = 15000
+      if state then
+         local bv = Instance.new("BodyVelocity", root)
+         bv.MaxForce = Vector3.new(1e5,1e5,1e5)
+         local bg = Instance.new("BodyGyro", root)
+         bg.MaxTorque = Vector3.new(1e5,1e5,1e5)
+         bg.P = 15000
 
-            spawn(function()
-                while Flying and task.wait() do
-                    hum.PlatformStand = true
-                    bg.CFrame = workspace.CurrentCamera.CFrame
-                    bv.Velocity = UserInputService:IsKeyDown(Enum.KeyCode.Space) and workspace.CurrentCamera.CFrame.LookVector * 120 or Vector3.new(0,0,0)
-                end
-                bv:Destroy()
-                bg:Destroy()
-                hum.PlatformStand = false
-            end)
-        end
-    end
+         spawn(function()
+            while Flying and task.wait() do
+               hum.PlatformStand = true
+               bg.CFrame = workspace.CurrentCamera.CFrame
+               bv.Velocity = UserInputService:IsKeyDown(Enum.KeyCode.Space) and workspace.CurrentCamera.CFrame.LookVector * 130 or Vector3.new(0,0,0)
+            end
+            bv:Destroy()
+            bg:Destroy()
+            hum.PlatformStand = false
+         end)
+      end
+   end
 })
 
--- Simple ESP
+-- Player ESP (Name + Distance)
+local ESP = false
 VisualTab:CreateToggle({
-    Name = "Player ESP (Name + Distance)",
-    CurrentValue = false,
-    Callback = function(state)
-        if state then
-            for _, player in pairs(game.Players:GetPlayers()) do
-                if player ~= game.Players.LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
-                    local bill = Instance.new("BillboardGui", player.Character.Head)
-                    bill.AlwaysOnTop = true
-                    bill.Size = UDim2.new(0,200,0,50)
-                    bill.StudsOffset = Vector3.new(0,3,0)
-                    local text = Instance.new("TextLabel", bill)
-                    text.BackgroundTransparency = 1
-                    text.Size = UDim2.new(1,0,1,0)
-                    text.TextColor3 = Color3.new(1,0,0)
-                    text.TextStrokeTransparency = 0
-                    text.Font = Enum.Font.GothamBold
-                    spawn(function()
-                        while state and player.Character and wait(0.1) do
-                            local dist = (player.Character.HumanoidRootPart.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
-                            text.Text = player.Name.." ["..math.floor(dist).."m]"
-                        end
-                    end)
-                end
+   Name = "Player ESP",
+   CurrentValue = false,
+   Callback = function(state)
+      ESP = state
+      if not state then
+         for _, p in pairs(game.Players:GetPlayers()) do
+            if p.Character and p.Character:FindFirstChild("Head") and p.Character.Head:FindFirstChild("RedWizardESP") then
+               p.Character.Head.RedWizardESP:Destroy()
             end
-        end
-    end
+         end
+         return
+      end
+
+      for _, p in pairs(game.Players:GetPlayers()) do
+         if p ~= game.Players.LocalPlayer and p.Character and p.Character:FindFirstChild("Head") then
+            local bill = Instance.new("BillboardGui", p.Character.Head)
+            bill.Name = "RedWizardESP"
+            bill.AlwaysOnTop = true
+            bill.Size = UDim2.new(0,200,0,50)
+            bill.StudsOffset = Vector3.new(0,3,0)
+            local txt = Instance.new("TextLabel", bill)
+            txt.BackgroundTransparency = 1
+            txt.Size = UDim2.new(1,0,1,0)
+            txt.Font = Enum.Font.GothamBold
+            txt.TextColor3 = Color3.fromRGB(255,0,0)
+            txt.TextStrokeTransparency = 0
+
+            spawn(function()
+               while ESP and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and task.wait(0.1) do
+                  local dist = (p.Character.HumanoidRootPart.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+                  txt.Text = p.Name.."\n["..math.floor(dist).."m]"
+               end
+            end)
+         end
+      end
+   end
 })
 
 -- Teleport to Player Dropdown (auto refresh)
-local dropdown
-dropdown = TeleportTab:CreateDropdown({
-    Name = "Teleport to Player",
-    Options = {"Loading players..."},
-    CurrentOption = "Loading players...",
-    Callback = function(name)
-        local target = game.Players:FindFirstChild(name)
-        if target and target.Character then
-            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame + Vector3.new(0,5,0)
-        end
-    end
+local tpDropdown
+tpDropdown = TeleTab:CreateDropdown({
+   Name = "Teleport to Player",
+   Options = {"Loading players..."},
+   CurrentOption = {"Loading players..."},
+   Callback = function(playerName)
+      local target = game.Players:FindFirstChild(playerName)
+      if target and target.Character then
+         game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame + Vector3.new(0,5,0)
+      end
+   end
 })
 
 spawn(function()
-    while wait(3) do
-        local names = {}
-        for _, p in pairs(game.Players:GetPlayers()) do
-            if p ~= game.Players.LocalPlayer then table.insert(names, p.Name) end
-        end
-        if #names > 0 then dropdown:Refresh(names) end
-    end
+   while task.wait(4) do
+      local list = {}
+      for _, p in pairs(game.Players:GetPlayers()) do
+         if p ~= game.Players.LocalPlayer then table.insert(list, p.Name) end
+      end
+      if #list > 0 then tpDropdown:Refresh(list) end
+   end
 end)
 
--- Rejoin
+-- Misc
 MiscTab:CreateButton({
-    Name = "Rejoin Server",
-    Callback = function()
-        game:GetService("TeleportService"):Teleport(game.PlaceId)
-    end
+   Name = "Rejoin Server",
+   Callback = function()
+      game:GetService("TeleportService"):Teleport(game.PlaceId)
+   end
 })
 
-print("RedWizard Hub - All features loaded!")
+print("RedWizard Hub - Fully loaded and ready!")
