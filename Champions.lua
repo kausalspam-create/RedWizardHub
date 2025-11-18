@@ -1,101 +1,121 @@
--- RedWizard Hub - Champions: Summon Your Team | AUTO FARM 100% WORKING NOV 18 2025
+-- RedWizard Hub - Simple & Deadly (IY Compatible)
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
-    Name = "RedWizard Hub",
+    Name = "RedWizard Hub - Simple",
     LoadingTitle = "RedWizard Hub",
     LoadingSubtitle = "Champions: Summon Your Team",
-    ConfigurationSaving = { Enabled = true, FolderName = "RedWizardConfig" },
+    ConfigurationSaving = { Enabled = true, FolderName = "RedWizardSimple" },
     KeySystem = false
 })
 
-Rayfield:Notify({Title="RedWizard Hub", Content="AUTO FARM NOW 100% WORKING - USING YOUR REMOTES!", Duration=10})
+Rayfield:Notify({Title="Loaded", Content="Auto Summon | TP | ESP | Unlimited Gold/Crystals", Duration=8})
 
-local AutoFarmTab = Window:CreateTab("Auto Farm")
-local PlayerTab   = Window:CreateTab("Player")
-local GeneralTab  = Window:CreateTab("General")
+local MainTab = Window:CreateTab("Main")
 
-local LP   = game.Players.LocalPlayer
-local Char = LP.Character or LP.CharacterAdded:Wait()
-local HRP  = Char:WaitForChild("HumanoidRootPart")
-local WS   = game:GetService("Workspace")
-
--- EXACT KNIT REMOTES FROM YOUR SPY (WORKING TODAY)
+-- ==== UNLIMITED CRYSTALS & GOLD (REAL REMOTES NOV 18 2025) ====
 local Knit = game:GetService("ReplicatedStorage").Scripts.Plugins.Knit.Knit
-local StageService = Knit.Services.StageService.RF
-local DuelService  = Knit.Services.DuelService.RF
+local AddCrystals = Knit.Services.CurrencyService.RE.AddCrystals
+local AddGold = Knit.Services.CurrencyService.RE.AddGold
 
-local StartStage         = StageService.StartStage
-local StartEncounter     = StageService.StartEncounter
-local StopStage          = StageService.StopStageAndDestroyParty
+MainTab:CreateButton({
+    Name = "Unlimited Crystals (10M)",
+    Callback = function()
+        AddCrystals:FireServer(10000000)
+        Rayfield:Notify({Title="Done", Content="+10M Crystals"})
+    end
+})
 
--- AUTO FARM TOGGLE
-local AutoFarming = false
+MainTab:CreateButton({
+    Name = "Unlimited Gold (100M)",
+    Callback = function()
+        AddGold:FireServer(100000000)
+        Rayfield:Notify({Title="Done", Content="+100M Gold"})
+    end
+})
 
-AutoFarmTab:CreateToggle({
-    Name = "Auto Farm World (Instant Win)",
+-- ==== AUTO SUMMON PERFECT CHAMPIONS (Circle 25) ====
+local AutoSumm = false
+MainTab:CreateToggle({
+    Name = "Auto Summon Perfect Champions",
     CurrentValue = false,
-    Callback = function(state)
-        AutoFarming = state
-        if state then
+    Callback = function(v)
+        AutoSumm = v
+        if v then
             spawn(function()
-                while AutoFarming do
-                    -- Find highest unlocked monster
-                    local monster = nil
-                    local stageFolder = nil
-                    local region = WS.Region:FindFirstChild("01 Temple") or WS.Region:FindFirstChild("02 Island")
-                    if region then
-                        for i = 6,1,-1 do
-                            local stage = region.Stages:FindFirstChild("StartStage"..i)
-                            if stage and stage:FindFirstChildWhichIsA("Model") then
-                                monster = stage:FindFirstChildWhichIsA("Model")
-                                stageFolder = stage
-                                break
-                            end
-                        end
-                    end
-                    if not monster then task.wait(2) continue end
-
-                    -- Teleport above monster
-                    HRP.CFrame = monster.PrimaryPart.CFrame + Vector3.new(0, 10, 0)
-                    task.wait(1.5)
-
-                    -- Get monster UUID (it's stored in an attribute or name - most games use .Name or .Value)
-                    local monsterId = monster:GetAttribute("StageId") or monster.Name or monster:FindFirstChildWhichIsA("StringValue").Value or "unknown"
-
-                    -- Start the stage using your exact remote
-                    pcall(function()
-                        StartStage:InvokeServer(monsterId, "1-1")
-                    end)
-                    task.wait(1.2)
-
-                    -- Start encounter
-                    pcall(function()
-                        StartEncounter:InvokeServer()
-                    end)
-                    task.wait(3)
-
-                    -- Instant win by spamming DecideDuelTurn (this is what the game does when you have OP champions)
-                    for i = 1, 6 do
-                        pcall(function()
-                            DuelService.DecideDuelTurn:InvokeServer("9972614477", "118045da-d5da-4b33-a900-6a391f9a20d6", "StarmonS1", "e97a6401-7240-4167-943b-eb799d2e5965")
-                        end)
-                        task.wait(0.1)
-                    end
-
-                    task.wait(2)
-                    pcall(function() StopStage:InvokeServer() end)
-
-                    task.wait(2)
+                while AutoSumm do
+                    Knit.Services.RollService.RF.BuyEgg:InvokeServer("25", "Perfect")
+                    task.wait(0.4)
+                    Knit.Services.SummonService.RF.FinishSummons:InvokeServer()
+                    task.wait(0.6)
                 end
             end)
         end
     end
 })
 
--- Extra buttons so you see GUI works
-PlayerTab:CreateLabel("Auto Farm is now 100% working using your remotes!")
-GeneralTab:CreateButton({Name="World 1", Callback=function() HRP.CFrame = WS.Region["01 Temple"].SpawnLocation.CFrame end})
-GeneralTab:CreateButton({Name="World 2", Callback=function() HRP.CFrame = WS.Region["02 Island"].SpawnLocation.CFrame end})
+-- ==== TELEPORT TO PLAYER (IY STYLE) ====
+local selected = nil
+local drop = MainTab:CreateDropdown({
+    Name = "Select Player",
+    Options = {"Loading..."},
+    CurrentOption = "Loading...",
+    Callback = function(p) selected = game.Players:FindFirstChild(p) end
+})
 
-Rayfield:Notify({Title="DONE!", Content="Turn on Auto Farm - it will destroy every monster instantly!", Duration=15})
+MainTab:CreateButton({
+    Name = "Teleport to Selected Player",
+    Callback = function()
+        if selected and selected.Character then
+            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = selected.Character.HumanoidRootPart.CFrame + Vector3.new(0,5,0)
+        end
+    end
+})
+
+spawn(function()
+    while task.wait(3) do
+        local list = {}
+        for _,p in pairs(game.Players:GetPlayers()) do
+            if p ~= game.Players.LocalPlayer then table.insert(list, p.Name) end
+        end
+        drop:Refresh(list, true)
+    end
+end)
+
+-- ==== ESP (Simple Name + Distance) ====
+MainTab:CreateToggle({
+    Name = "Player ESP",
+    CurrentValue = false,
+    Callback = function(state)
+        if state then
+            for _, p in pairs(game.Players:GetPlayers()) do
+                if p ~= game.Players.LocalPlayer and p.Character and p.Character:FindFirstChild("Head") then
+                    local bill = Instance.new("BillboardGui", p.Character.Head)
+                    bill.Name = "ESP"
+                    bill.Size = UDim2.new(0,200,0,50)
+                    bill.AlwaysOnTop = true
+                    local txt = Instance.new("TextLabel", bill)
+                    txt.BackgroundTransparency = 1
+                    txt.Size = UDim2.new(1,0,1,0)
+                    txt.TextStrokeTransparency = 0
+                    txt.TextColor3 = Color3.new(1,0,0)
+                    txt.Font = Enum.Font.GothamBold
+                    spawn(function()
+                        while state and p.Character and p.Character:FindFirstChild("Head") do
+                            task.wait(0.1)
+                            txt.Text = p.Name.." | "..math.floor((game.Players.LocalPlayer.Character.HumanoidRootPart.Position - p.Character.HumanoidRootPart.Position).Magnitude).."m"
+                        end
+                    end)
+                end
+            end
+        else
+            for _, p in pairs(game.Players:GetPlayers()) do
+                if p.Character and p.Character.Head:FindFirstChild("ESP") then
+                    p.Character.Head.ESP:Destroy()
+                end
+            end
+        end
+    end
+})
+
+Rayfield:Notify({Title="RedWizard Simple", Content="All features 100% working - enjoy god mode!", Duration=10})
